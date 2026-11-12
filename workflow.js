@@ -196,16 +196,38 @@ const partGlyph={
   'robot-base':'M66 105q0-24 24-24h153q24 0 24 24v7q0 21-24 21H90q-24 0-24-21z',
   custom:'M69 78h195v54H69z M69 86l20-15h154l21 15'
 };
+const robotPartOutlines={
+  'robot-head':{view:'Front',bounds:[61,45,267,135],path:'M104 45H224Q267 45 267 90T224 135H104Q61 135 61 90T104 45Z M108 58H220Q252 58 252 90T220 122H108Q76 122 76 90T108 58Z'},
+  'robot-mount':{view:'Front',bounds:[90,56,240,130],path:'M106 56Q90 56 90 72V111Q90 130 110 130H220Q240 130 240 111V72Q240 56 224 56Q209 56 209 72V102H121V72Q121 56 106 56Z M90 111H121M209 111H240 M99 76a7 7 0 1 0 14 0a7 7 0 1 0-14 0 M217 76a7 7 0 1 0 14 0a7 7 0 1 0-14 0'},
+  'robot-base':{view:'Front',bounds:[62,71,266,127],path:'M91 71H237Q266 71 266 99T237 127H91Q62 127 62 99T91 71Z M65 108H263 M141 71v9h46v-9'}
+};
+const robotVariantOutlines={
+  'robot-cantilever-v2':{
+    'robot-mount':{view:'Side',bounds:[95,44,235,140],path:'M117 44a22 22 0 0 0 0 44h49q12 0 12 12v28h-29v12h86v-12h-28V93q0-28-29-28h-41a22 22 0 0 0-20-21Z M117 54a12 12 0 1 0 0 24a12 12 0 1 0 0-24 M158 128v12m67-12v12'},
+    'robot-base':{view:'Side',bounds:[57,62,268,129],path:'M75 79H180L195 62H244Q268 62 268 86V109Q268 129 249 129H76Q57 129 57 109V100Q57 79 75 79Z M57 111H268 M207 62v11m27-11v11'}
+  },
+  'robot-slide-rail-v2':{
+    'robot-mount':{view:'Side',bounds:[51,62,267,128],path:'M59 106H259Q267 106 267 114V120Q267 128 259 128H59Q51 128 51 120V114Q51 106 59 106Z M63 117H255 M129 106V93Q129 87 136 87H179Q186 87 186 93V106 M150 87V75H165V87 M146 75V62H169V75Z M136 98h6m31 0h6'},
+    'robot-base':{view:'Side',bounds:[50,78,270,125],path:'M77 78H243Q270 78 270 102T243 125H77Q50 125 50 102T77 78Z M52 110H268 M93 78v8h134v-8'}
+  }
+};
 const overallGlyph='M50 149C54 105 107 53 166 53s112 52 116 96c-7 25-225 25-232 0Z M50 149c41 11 193 11 232 0 M123 166c-1 9-8 14-8 24 2 16 100 16 102 0 0-10-7-15-8-24 M121 195c-14 10-22 23-21 42 1 36 132 36 133 0 1-19-7-32-22-42 M100 235c13 22 119 22 133 0';
-function diagram(esc,values,part,lamp,robot,photo='') {
+function diagram(esc,values,part,lamp,robot,outline) {
   const overall=!part, shape=overall?(robot?'M50 117q0-62 62-62h108q62 0 62 62t-62 62H112q-62 0-62-62z M144 179v35m44-35v35 M101 230q0-16 16-16h100q16 0 16 16v13q0 16-16 16H117q-16 0-16-16z':lamp?overallGlyph:'M50 54h232v205H50z M50 70l15-16h204l13 16'):partGlyph[part.kind];
-  const marker=(key,label,cls)=>`<label class="measure ${cls}"><input type="number" aria-label="${esc(label)} in mm" data-dimension="${key}" min="1" max="10000" step="any" value="${values[key]}"><span>mm</span></label>`;
-  const arrows=overall?'M50 36h232m-232-5v10m232-10v10m-8 12h28m-71 209h71m-11-209v209m-5-203 5-6 5 6m-10 197 5 6 5-6M100 280h133m-127-5-6 5 6 5m121-10 6 5-6 5':photo?
-    'M60 35h212m-206-5-6 5 6 5m200-10 6 5-6 5M292 45v174m-5-168 5-6 5 6m-10 162 5 6 5-6':
+  const marker=(key,label,cls,position='')=>`<label class="measure ${cls}"${position?' style="'+position+'"':''}><input type="number" aria-label="${esc(label)} in mm" data-dimension="${key}" min="1" max="10000" step="any" value="${values[key]}"><span>mm</span></label>`;
+  let arrows=overall?'M50 36h232m-232-5v10m232-10v10m-8 12h28m-71 209h71m-11-209v209m-5-203 5-6 5 6m-10 197 5 6 5-6M100 280h133m-127-5-6 5 6 5m121-10 6 5-6 5':
     'M60 35h212m-206-5-6 5 6 5m200-10 6 5-6 5M292 51v78m-5-72 5-6 5 6m-10 66 5 6 5-6';
-  const visual=photo?`<image href="${esc(photo)}" x="60" y="45" width="212" height="174" preserveAspectRatio="xMidYMid meet"/>`:
-    `<path class="dimension-shape" d="${shape||partGlyph.custom}"/>`;
-  return `<div class="dimension-diagram ${overall?'overall':photo?'part-diagram photo-part-diagram':'part-diagram'}"><svg viewBox="0 0 345 ${overall?310:photo?230:155}" aria-hidden="true">${visual}<path class="dimension-line" d="${arrows}"/></svg>${marker('width',overall?'Overall width':part.name+' width','top-measure')}${marker('height',overall?'Overall height':part.name+' height','right-measure')}${overall?marker('base',robot?'Base depth target':'Base width','bottom-measure'):''}</div>`;
+  let widthPosition='',heightPosition='';
+  if(outline){
+    const [x1,y1,x2,y2]=outline.bounds;
+    arrows=`M${x1} 30H${x2} M${x1} 25v10 M${x2} 25v10
+      M${x2+7} ${y1}H293 M${x2+7} ${y2}H293 M287 ${y1}V${y2}
+      M283 ${y1+5}l4-5 4 5 M283 ${y2-5}l4 5 4-5`;
+    widthPosition=`left:${(x1+x2)/6.9}%;top:8%`;
+    heightPosition=`top:${(y1+y2)/3.1}%`;
+  }
+  const visual=`<path class="dimension-shape" d="${outline?.path||shape||partGlyph.custom}"/>`;
+  return `<div class="dimension-diagram ${overall?'overall':'part-diagram'}"><svg viewBox="0 0 345 ${overall?310:155}" aria-hidden="true">${visual}<path class="dimension-line" d="${arrows}"/></svg>${marker('width',overall?'Overall width':part.name+' width','top-measure',widthPosition)}${marker('height',overall?'Overall height':part.name+' height','right-measure',heightPosition)}${overall?marker('base',robot?'Base depth target':'Base width','bottom-measure'):''}</div>`;
 }
 
 export function createWorkflow(context) {
@@ -230,12 +252,15 @@ export function createWorkflow(context) {
     ? `<ul>${items.map(item=>`<li>${esc(item)}</li>`).join('')}</ul>`
     : '<p>No decisions in this column yet.</p>';
   const header=(title,node,extra='')=>`<div class="node-header" data-drag="${node.id}"><span>${esc(title)}</span>${extra}</div>`;
+  const robotVariant=round=>{
+    if(robotVariantParts[round.image])return round.image;
+    const origin=round.parent&&board().rounds.find(item=>item.id===round.parent.roundId)?.options[round.parent.index]?.image;
+    return robotVariantParts[origin]?origin:'';
+  };
   const partArt=(part,round)=>{
     if(part.image)return part.image;
     if(robot()){
-      const origin=round.parent&&board().rounds.find(item=>item.id===round.parent.roundId)?.options[round.parent.index]?.image;
-      const variant=robotVariantParts[round.image]||robotVariantParts[origin];
-      return variant?.[part.kind]||robotPartPhotos[part.kind]||'';
+      return robotVariantParts[robotVariant(round)]?.[part.kind]||robotPartPhotos[part.kind]||'';
     }
     return lamp()&&part.kind!=='custom'?part.kind:'';
   };
@@ -330,10 +355,9 @@ export function createWorkflow(context) {
         <p class="node-description">Set overall dimensions, then check the size of each component.</p><p class="diagram-hint">Use measurements or a quick mock-up to verify scale.</p>`,action('sizes',r.sizesConfirmed));
     case 'partSizes':
       return `<div class="size-stack">${r.parts.map(part=>{
-        const art=robot()?partArt(part,r):'';
-        const photo=robotPhotos.has(art)?artUrl(art):inlineImage(art)?art:'';
-        const hint=photo?'Use the render as a reference. Edit the target width and height.':'Edit the dimensions directly on the component.';
-        return `<div class="node-card" data-part="${part.id}">${header(part.name+' size',node)}<div class="node-body"><p class="node-description">${hint}</p>${diagram(esc,part,part,lamp(),robot(),photo)}</div></div>`;
+        const outline=robot()?(robotVariantOutlines[robotVariant(r)]?.[part.kind]||robotPartOutlines[part.kind]):null;
+        const hint=outline?`${outline.view} view · Edit target dimensions in mm. Reference only.`:'Edit the dimensions directly on the component.';
+        return `<div class="node-card" data-part="${part.id}">${header(part.name+' size',node)}<div class="node-body"><p class="node-description">${hint}</p>${diagram(esc,part,part,lamp(),robot(),outline)}</div></div>`;
       }).join('')}</div>`;
     case 'decisions': {
       const names=r.parts.filter(part=>part.selected).map(part=>part.name).join(', ');
